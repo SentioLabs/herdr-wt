@@ -6,11 +6,21 @@ A [Herdr](https://herdr.dev) mod: one dialog to open, create and remove git work
 
 ## Install
 
-Ask your agent to install it from this repo, or by hand:
+Paste this to the agent in your Herdr window:
 
-1. Copy `mods/wt/` into `~/.config/herdr-app/mods/` (rename it if you already have a `wt` mod, and change the key to match).
-2. Merge `keys.json` into `~/.config/herdr-app/keys.json`.
-3. Run `herdr-app check ~/.config/herdr-app/mods/wt`.
+```
+Read ~/.config/herdr-app/AGENTS.md, then add this mod: github.com/SentioLabs/herdr-wt
+```
+
+Or by hand:
+
+```sh
+git clone https://github.com/SentioLabs/herdr-wt
+cp -R herdr-wt/mods/wt ~/.config/herdr-app/mods/
+herdr-app check ~/.config/herdr-app/mods/wt
+```
+
+Then merge `keys.json` into `~/.config/herdr-app/keys.json`. If you already have a `wt` mod, rename this one's folder and its `mod.open:wt` key to match. If ⌘⇧G is taken (other git mods use it too), pick another key.
 
 It needs `git` and `wt` on every machine you use it with. It approves worktrunk's hook prompts (`--yes`) because there's no terminal to answer them.
 
