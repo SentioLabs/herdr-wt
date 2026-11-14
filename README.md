@@ -15,3 +15,7 @@ Ask your agent to install it from this repo, or by hand:
 It needs `git` and `wt` on every machine you use it with. It approves worktrunk's hook prompts (`--yes`) because there's no terminal to answer them.
 
 [RECIPE.md](RECIPE.md) describes the mod in enough detail to rebuild it on another Herdr version.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
