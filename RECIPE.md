@@ -54,11 +54,12 @@ Removing a worktree first closes the space showing it, then runs `wt remove <bra
 - **Removing the folder the dialog came from.** Later `wt` calls can't run in a deleted folder, so switch the working folder to the main checkout first.
 - **Keys.** ⌘⌫ is often bound to clear the terminal line, hence ⌘⇧⌫. ⇥ must reach the root's `on_key_down`. If the input or the app takes it, checking still works by click.
 - Requires `git` and worktrunk's `wt` on every machine you use it on, found on the PATH Herdr's `exec` sees. That PATH can differ from your interactive shell's, so a stale `wt` (for example in `~/.cargo/bin`) can win.
+- `main.js` has no `mods/wt/` paths, so renaming the folder on a name clash only needs the `mod.open:wt` key changed to match.
 - Follow the installed `herdr.d.ts` and `gpui-kit.d.ts`, and never modify shipped mods.
 
 ## Done when
 
-- `herdr-app check mods/wt` passes with the matching Herdr binary and home.
+- `herdr-app check ~/.config/herdr-app/mods/wt` passes with the matching Herdr binary and home, and no `keys.error` appears after the key merge.
 - ⌘⇧G in a space inside a repo lists its worktrees, local branches and remote branches. Outside a repo it says "<folder> is not in a git repository."
 - The same works in a space on another machine (`hc machine ls`).
 - Typing filters, ↑/↓ move and scroll, ↵ opens or switches to the right space, and a new name creates a branch and worktree through worktrunk.
