@@ -32,7 +32,7 @@ This file is the brief: enough to build the mod from an empty folder. The files 
 
 Typing, moving the highlight or toggling a box disarms a pending removal. A new space is left unnamed so it follows its folder and nests under the repo in the sidebar.
 
-Removing a worktree first closes the space showing it, then runs `wt remove <branch> --foreground --yes`, adding `--force` when it has uncommitted changes. worktrunk deletes the branch only when it's merged. `removeFlags()` at the top of `main.js` is the place to change that policy.
+Removing a worktree first closes the space showing it and waits up to 10 seconds for that space's terminals to stop. Then it runs `wt remove <branch> --foreground --yes`, adding `--force` when it has uncommitted changes. If the terminals are still running after 10 seconds, that worktree fails with "its space's terminals haven't stopped yet" and stays checked. worktrunk deletes the branch only when it's merged. `removeFlags()` at the top of `main.js` is the place to change that policy.
 
 ## Built from
 
@@ -42,7 +42,7 @@ Removing a worktree first closes the space showing it, then runs `wt remove <bra
 - **Commands:** `space.select`, `space.new {folder, machine}` and `space.close {id, confirmed}`, dispatched with `run()`.
 - **Elements:** `gpui-kit` views with `gpui-base` `InputState`, `Input`, `Checkbox`, `Scrollbar` and `ScrollHandle`.
 - **Optional props**, for opening it from another mod or a menu: `{ space }` or `{ folder, machine }` pick the repo, `{ branch }` switches to it at once, `{ tab, argv }` go to the new space.
-- Started from Herdr's shipped `worktree` mod (0.1.13), which Herdr wrote. The list, checkboxes, worktrunk calls and removal are new.
+- Started from Herdr's shipped `worktree` mod (0.1.13), which Herdr wrote. The list, checkboxes, worktrunk calls and removal are new. The bare-repo name and the wait for terminals came later from the shipped mod in 0.1.18.
 
 ## Watch out
 
@@ -51,6 +51,8 @@ Removing a worktree first closes the space showing it, then runs `wt remove <bra
 - **Keep the checkbox out of the open click.** The checkbox and the clickable text column are siblings in the row. `Checkbox` reports through `on_change`, so a `stop_propagation()` in its `on_click` doesn't stop the row's handler.
 - **Two `wt list` formats.** Schema 2 (current) is `{ schema, items }` with worktree fields under `worktree` and remote branches as `{ branch: "foo", remote: "origin" }`. Older versions (v0.61) print a bare array with `path`, `is_main`, `working_tree` and `commit.timestamp` at the top, and name remote branches `origin/foo`. Read both, and treat `origin/foo` as existing so it isn't created as a new branch.
 - **`--yes`.** There's no terminal to answer worktrunk's approval prompts, so `wt switch` and `wt remove` approve hooks without asking, and hook output only shows on failure. Disclose this.
+- **Closing a space doesn't stop its programs at once.** `space.close` only queues the kills. Collect the space's terminal addresses from `panes()` first, then poll `terminals()` until none of them is `live`. Without the wait, an agent or build still writing into the folder races `wt remove`.
+- **Bare repos.** When the git common dir is `<project>/.bare`, name the repo after `<project>`, not `.bare`.
 - **Removing the folder the dialog came from.** Later `wt` calls can't run in a deleted folder, so switch the working folder to the main checkout first.
 - **Keys.** ⌘⌫ is often bound to clear the terminal line, hence ⌘⇧⌫. ⇥ must reach the root's `on_key_down`. If the input or the app takes it, checking still works by click.
 - Requires `git` and worktrunk's `wt` on every machine you use it on, found on the PATH Herdr's `exec` sees. That PATH can differ from your interactive shell's, so a stale `wt` (for example in `~/.cargo/bin`) can win.
