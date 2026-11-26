@@ -7,7 +7,7 @@
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, Scrollbar, Checkbox, ScrollHandle } from "gpui-base";
-import { run, props, closeOverlay, theme, spaces, panes, exec, home } from "herdr";
+import { run, props, closeOverlay, theme, spaces, panes, terminals, exec, home } from "herdr";
 
 // Where a space is now: its first terminal's live folder, else where it was made.
 function place(s, all = panes()) {
@@ -72,7 +72,24 @@ async function repoOf(folder, on) {
   const common = await git(folder, ["rev-parse", "--path-format=absolute", "--git-common-dir"], on);
   if (!top.ok || !common.ok) return null;
   const main = common.out.endsWith("/.git") ? common.out.slice(0, -5) : common.out;
-  return { top: top.out, main, name: main.split("/").pop() };
+  // A bare repo hidden beside its worktrees (<project>/.bare) is named after its project.
+  const parts = main.split("/"), name = parts.at(-1) === ".bare" ? parts.at(-2) : parts.at(-1);
+  return { top: top.out, main, name };
+}
+
+// Close space s and wait for its programs to stop. space.close only queues the
+// kills, so an agent or build still writing into the folder would race the
+// removal. Returns false if they're still running after 10 seconds.
+async function closeSpace(s, cx) {
+  const tabs = new Set((s.tabs ?? []).map((t) => t.id));
+  const closing = new Set(panes().filter((p) => p.terminal && tabs.has(p.tab)).map((p) => p.terminal));
+  run("space.close", { id: s.id, confirmed: true });
+  const deadline = Date.now() + 10_000;
+  while (closing.size && terminals().some((t) => t.state === "live" && closing.has(t.address))) {
+    if (Date.now() >= deadline) return false;
+    await cx.sleep(50);
+  }
+  return true;
 }
 
 export default class Worktrees extends View {
@@ -235,7 +252,10 @@ export default class Worktrees extends View {
       try {
         // Terminals first: a shell sitting in the folder keeps it busy on Windows.
         const s = spaceOf(c.path, this.list.filter((x) => x.path), this.on, spaces(), panes());
-        if (s) run("space.close", { id: s.id, confirmed: true });
+        if (s && !(await closeSpace(s, cx))) {
+          failed.push(`${c.branch ?? c.path}: its space's terminals haven't stopped yet. Remove again to retry.`);
+          continue;
+        }
         if (c.path === this.repo.top) this.repo.top = this.repo.main; // later wt calls can't run in a deleted folder
         const r = await exec("wt", ["remove", c.branch ?? c.path, "--foreground", "--yes", ...removeFlags(c)], { cwd: this.repo.main, on: this.on });
         if (r.code !== 0) failed.push(`${c.branch ?? c.path}: ${(r.stderr || r.stdout || "wt remove failed.").trim()}`);
